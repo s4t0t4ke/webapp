@@ -4,7 +4,7 @@ import data
 
 
 def main():
-    st.title('私はロボットではありません')
+    st.title('私はロボットではありません!')
 
     # 最初の起動時だけ実行
     if "history" not in st.session_state:
