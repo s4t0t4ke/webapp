@@ -1,5 +1,4 @@
 import streamlit as st 
-import utils
 import data
 import random
 
@@ -23,7 +22,7 @@ def main():
 
     # 最初の起動時だけ実行
     if "history" not in st.session_state:
-        utils.prepare()
+        prepare()
         first = f"あなたの役職は{data.role_list[0]}です。"
         st.session_state["history"] = [{"role": "ai", "content": first}]
 
@@ -46,7 +45,7 @@ def main():
                 icon = data.icon_list[i]
                 with st.spinner('思考中...'):
                     talk_history = [history["content"] for history in st.session_state["history"]]
-                    response = utils.make_chat(talk_history)
+                    response = make_chat(talk_history)
                 # チャットメッセージコンテナにアシスタントのレスポンスを表示
                 st.chat_message(icon).markdown(response)
                 # チャット履歴にアシスタントのレスポンスを追加
