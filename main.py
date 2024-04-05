@@ -10,10 +10,25 @@ def prepare():
     random.shuffle(data.role_list)
 
 
-def make_chat(history):
-    model = genai.GenerativeModel('gemini-pro')
-    response = model.generate_content("簡単な挨拶をしてください")
-    return response.text
+def make_chat(history, idx):
+    model = genai.GenerativeModel('gemini-pro', safety_settings=None)
+    talk_history = ""
+    for talk in history:
+        user = talk.get("role")
+        content = talk.get("content")
+        if user == "ai":
+            continue
+        #talk_history += f"{data.order[data.icon_list.index(user)]}: {content}\n"
+        talk_history += f"{user}: {content}\n"
+    talk_history += f"{data.icon_list[idx]}: XXX"
+    prompt = data.PROMPT.format(talk_history)
+    print(prompt)
+    response = model.generate_content(prompt)
+    result = response.text
+    result = result.replace(" ", "")
+    if result[1] == ":":
+        result = result[2:]
+    return result
 
 
 def main():
@@ -23,7 +38,7 @@ def main():
     # 最初の起動時だけ実行
     if "history" not in st.session_state:
         prepare()
-        first = f"あなたの役職は{data.role_list[0]}です。"
+        first = data.FIRST.format(data.role_list[0], "")
         st.session_state["history"] = [{"role": "ai", "content": first}]
 
     # アプリの再実行の際に履歴のチャットメッセージを表示
@@ -41,11 +56,10 @@ def main():
             # チャット履歴にユーザーメッセージを追加
             st.session_state["history"].append({"role": icon, "content": user_input})
             
-            for i in range(1,5):
-                icon = data.icon_list[i]
+            for idx in range(1,5):
+                icon = data.icon_list[idx]
                 with st.spinner('思考中...'):
-                    talk_history = [history["content"] for history in st.session_state["history"]]
-                    response = make_chat(talk_history)
+                    response = make_chat(st.session_state["history"], idx)
                 # チャットメッセージコンテナにアシスタントのレスポンスを表示
                 st.chat_message(icon).markdown(response)
                 # チャット履歴にアシスタントのレスポンスを追加
