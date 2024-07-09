@@ -1,18 +1,16 @@
 import streamlit as st 
-import data
 import random
+
+import parameter
+import gamedata as gd
+from prompt import *
 
 import google.generativeai as genai
 genai.configure(api_key=st.secrets["GEMINI_KEY"])
-
-
-def prepare():
-    random.shuffle(data.icon_list)
-    random.shuffle(data.role_list)
+model = genai.GenerativeModel('gemini-pro', safety_settings=parameter.safety_settings)
 
 
 def make_chat(history, idx):
-    model = genai.GenerativeModel('gemini-pro', safety_settings=data.safety_settings)
     talk_history = ""
     for talk in history:
         user = talk.get("role")
@@ -20,8 +18,11 @@ def make_chat(history, idx):
         if user == "ai":
             continue
         talk_history += f"Agent[0{user}]: {content}\n"
-    talk_history += f"{data.icon_list[idx]}: XXX"
-    prompt = data.PROMPT.format(idx, talk_history)
+    talk_history += f"Agent[0{idx}]: XXX"
+    
+    prompt = COMMON.format(idx, talk_history)
+    with open("prompt.md", mode="w") as f:
+        f.write(prompt)
     response = model.generate_content(prompt)
     result = response.text
     result = result.replace(" ", "")
@@ -32,14 +33,14 @@ def make_chat(history, idx):
 
 def main():
     st.title("私はロボットではありません!")
-    st.header("DEMO版")
 
     # 最初の起動時だけ実行
     if "history" not in st.session_state:
-        prepare()
-        first = data.FIRST.format(data.icon_list[0], data.role_list[0])
-        data.talk_count = 0
+        gd.talk_count = 0
+        first = FIRST.format("1", gd.role_list[0])
         st.session_state["history"] = [{"role": "ai", "content": first}]
+        seer_result = "Agent[02]は人間でした"
+        st.session_state["history"].append({"role": "ai", "content": seer_result})
 
     # アプリの再実行の際に履歴のチャットメッセージを表示
     for talk in st.session_state["history"]:
@@ -48,26 +49,24 @@ def main():
 
     # ユーザー入力に対する反応
     if user_input := st.chat_input("入力", max_chars=100):
-        if data.talk_count < 3:
-            data.talk_count += 1
-            # チャットメッセージコンテナにユーザーメッセージを表示
-            icon = data.icon_list[0]
-            st.chat_message(icon).markdown(user_input)
+        if gd.talk_count < 3:
+            gd.talk_count += 1
             # チャット履歴にユーザーメッセージを追加
-            st.session_state["history"].append({"role": icon, "content": user_input})
+            idx = "1"
+            st.session_state["history"].append({"role": idx, "content": user_input})
+            # チャットメッセージコンテナにユーザーメッセージを表示
+            st.chat_message(idx).markdown(user_input)
             
-            for idx in range(1,5):
-                icon = data.icon_list[idx]
+            for idx in ["2", "3", "4", "5"]:
                 response = make_chat(st.session_state["history"], idx)
-                # チャットメッセージコンテナにアシスタントのレスポンスを表示
-                st.chat_message(icon).markdown(response)
                 # チャット履歴にアシスタントのレスポンスを追加
-                st.session_state["history"].append({"role": icon, "content": response})
-            if data.talk_count == 3:
+                st.session_state["history"].append({"role": idx, "content": response})
+                # チャットメッセージコンテナにアシスタントのレスポンスを表示
+                st.chat_message(idx).markdown(response)
+            if gd.talk_count == 3:
                 end = "OWARI"
                 st.chat_message("ai").markdown(end)
                 st.session_state["history"].append({"role": "ai", "content": end})
-                # 投票先のボタン表示
 
 
 if __name__ == "__main__":
