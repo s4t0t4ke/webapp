@@ -21,7 +21,7 @@ def make_chat(history, idx):
     talk_history += f"Agent[0{idx}]: XXX"
     
     prompt = COMMON.format(idx, talk_history)
-    with open("prompt.md", mode="w") as f:
+    with open("check.md", mode="w") as f:
         f.write(prompt)
     response = model.generate_content(prompt)
     result = response.text
